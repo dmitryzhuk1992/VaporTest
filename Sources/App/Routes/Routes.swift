@@ -1,10 +1,13 @@
 import Vapor
-import AVFoundation
 
-struct Device: Codable {
+struct Device: NodeRepresentable {
     var name: String
     var date: String
     var url: String
+
+    func makeNode(in context: Context?) throws -> Node {
+        return try Node(node: ["name":self.name, "date":self.date, "url":self.url])
+    }
 }
 
 var devices: [Device] = []
@@ -33,16 +36,8 @@ extension Droplet {
         get("devices") { req in
             initData()
             
-            var jsonArray: [JSON] = []
-            
-            for device in devices {
-                let jsonData = try JSONEncoder().encode(device)
-                let jsonElement = try JSON(bytes: jsonData)
-                jsonArray.append(jsonElement)
-            }
-            
-            var json = JSON()
-            try json.set("devices", jsonArray)
+            let jsonOut = try JSON(node: devices)
+            let json = JSON(dictionaryLiteral: ("devices", jsonOut))
             
             return json
         }
